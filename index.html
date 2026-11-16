@@ -468,6 +468,16 @@ footer p { margin: .8rem auto 0; color: var(--muted); font-size: .72rem; letter-
   #pampas2 { width: 40vw; height: 36svh; right: -10%; }
   .names { letter-spacing: .1em; }
 }
+
+/* Music toggle: a small gold-rimmed paper disc, bottom-right */
+#music-toggle {
+  position: fixed; right: 16px; bottom: calc(16px + env(safe-area-inset-bottom, 0px)); z-index: 50;
+  width: 44px; height: 44px; border-radius: 50%; padding: 0;
+  border: 1px solid var(--taupe, #B08E54); background: var(--surface, #F6F1E7); color: var(--sage-deep, #45523C);
+  font: 20px/1 var(--serif, Georgia, serif); cursor: pointer; box-shadow: 0 2px 10px rgba(30,36,26,.18);
+  transition: opacity .3s ease;
+}
+#music-toggle.off { opacity: .55; text-decoration: line-through; }
 </style>
 
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
@@ -724,6 +734,9 @@ footer p { margin: .8rem auto 0; color: var(--muted); font-size: .72rem; letter-
   <div class="lb-count" id="lb-count"></div>
 </div>
 
+<audio id="bgm" src="music/song.mp3" loop preload="auto"></audio>
+<button id="music-toggle" type="button" aria-label="Pause music" aria-pressed="true" hidden>♪</button>
+
 <script>
 (function () {
   var body = document.body;
@@ -796,6 +809,27 @@ footer p { margin: .8rem auto 0; color: var(--muted); font-size: .72rem; letter-
     setTimeout(function () { env.hidden = true; }, 3200);
   }
   document.getElementById("seal").addEventListener("click", openEnv);
+
+  /* ---------- Background music: starts on the seal tap (a user gesture, so phones allow it) ---------- */
+  var bgm = document.getElementById("bgm");
+  var mt = document.getElementById("music-toggle");
+  var musicOk = true;
+  bgm.volume = 0.6;
+  bgm.addEventListener("error", function () { musicOk = false; mt.hidden = true; }, true);
+  function setMusicUi(playing) {
+    mt.classList.toggle("off", !playing);
+    mt.setAttribute("aria-label", playing ? "Pause music" : "Play music");
+    mt.setAttribute("aria-pressed", playing ? "true" : "false");
+  }
+  document.getElementById("seal").addEventListener("click", function () {
+    if (!musicOk || !bgm.paused) return;
+    bgm.play().then(function () { mt.hidden = false; setMusicUi(true); })
+      .catch(function () { if (musicOk) { mt.hidden = false; setMusicUi(false); } });
+  });
+  mt.addEventListener("click", function () {
+    if (bgm.paused) { bgm.play().then(function () { setMusicUi(true); }).catch(function () {}); }
+    else { bgm.pause(); setMusicUi(false); }
+  });
   document.getElementById("replay").addEventListener("click", seal);
   seal();
 
